@@ -35,6 +35,8 @@ brew 'svn' # Needed to install fonts
 brew 'yarn'
 brew 'pnpm'
 brew 'nvm'
+brew 'zsh-autosuggestions'
+
 
 # Apps
 cask '1password'
