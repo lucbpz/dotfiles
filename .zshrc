@@ -116,29 +116,3 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 [ -s "$HOMEBREW_PREFIX/opt/nvm/nvm.sh" ] && \. "$HOMEBREW_PREFIX/opt/nvm/nvm.sh" # This loads nvm
 [ -s "$HOMEBREW_PREFIX/opt/nvm/etc/bash_completion.d/nvm" ] && \. "$HOMEBREW_PREFIX/opt/nvm/etc/bash_completion.d/nvm" # This loads nvm bash_completion
-
-[[ -f "/Applications/Herd.app/Contents/Resources/config/shell/zshrc.zsh" ]] && builtin source "/Applications/Herd.app/Contents/Resources/config/shell/zshrc.zsh"
-
-# Git
-alias gc="git commit -S -m"
-alias gca="git commit --amend --no-edit"
-alias gco="git checkout"
-alias gp="git push"
-alias gpf="git push --force-with-lease"
-
-gnew() {
-  STASH_OUTPUT=$(git stash push -m "Auto stash by alias" 2>&1)
-  
-  if [[ $STASH_OUTPUT == *"No local changes to save"* ]]; then
-    STASHED=false
-  else
-    STASHED=true
-  fi
-
-  git fetch origin
-  git checkout -b "$1" origin/main
-
-  if $STASHED; then
-    git stash pop
-  fi
-}
