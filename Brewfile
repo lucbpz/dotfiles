@@ -51,7 +51,7 @@ cask 'github'
 cask 'google-chrome'
 cask "http-toolkit"
 cask 'imageoptim'
-cask "insomnia"
+# cask "insomnia"
 # cask 'loom'
 # cask 'pastebot'
 # cask 'reflex'
