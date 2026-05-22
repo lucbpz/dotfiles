@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Usage: wdel
+#   From inside a worktree workspace: removes the worktree, deletes the branch,
+#   and closes the current cmux workspace.
+set -euo pipefail
+
+WORKTREE_PATH=$(git rev-parse --show-toplevel)
+BRANCH=$(git branch --show-current)
+MAIN_REPO=$(git worktree list | awk 'NR==1{print $1}')
+WS=${CMUX_WORKSPACE_ID:?Not running inside a cmux workspace}
+
+cd "$MAIN_REPO"
+git worktree remove --force "$WORKTREE_PATH"
+git branch -D "$BRANCH"
+cmux close-workspace --workspace "$WS"

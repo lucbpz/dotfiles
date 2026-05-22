@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# Usage: wtree <branch> [prompt]
+#   Creates a git worktree at ~/.superset/worktrees/{repo}/{branch}, opens it in a
+#   new cmux workspace named {repo}/{branch} with a repo-consistent color, and runs
+#   ~/.dotfiles/bin/wtree-hooks/{repo}.sh in the main pane. If a prompt is given,
+#   opens a right split and starts claude with it.
+#   Example: wtree feature/auth "fix the login bug"
+set -euo pipefail
+
+BRANCH=${1:?Usage: wtree <branch> [prompt]}
+PROMPT=${2:-}
+
+REPO_ROOT=$(git rev-parse --show-toplevel)
+REPO_NAME=$(git remote get-url origin 2>/dev/null | sed 's/.*[/:]//; s/\.git$//' || basename "$REPO_ROOT")
+WORKTREE_PATH="${HOME}/.superset/worktrees/${REPO_NAME}/${BRANCH}"
+
+mkdir -p "$(dirname "$WORKTREE_PATH")"
+
+# Create branch+worktree, or just add worktree if branch already exists
+if git show-ref --verify --quiet "refs/heads/$BRANCH"; then
+    git worktree add "$WORKTREE_PATH" "$BRANCH"
+else
+    git worktree add -b "$BRANCH" "$WORKTREE_PATH" origin/main
+fi
+
+WORKSPACE_NAME=$( [ "$REPO_NAME" = "frontends" ] && echo "$BRANCH" || echo "${REPO_NAME}/${BRANCH}" )
+COLORS=(Red Crimson Orange Amber Olive Green Teal Aqua Blue Navy Indigo Purple Magenta Rose Brown Charcoal)
+IDX=$(( $(printf '%s' "$REPO_NAME" | cksum | awk '{print $1}') % ${#COLORS[@]} ))
+COLOR=${COLORS[$IDX]}
+
+CLAUDE_CMD="claude --dangerously-skip-permissions"
+
+WS=$(cmux new-workspace --name "$WORKSPACE_NAME" --cwd "$WORKTREE_PATH")
+cmux workspace-action --workspace "$WS" set-color "$COLOR"
+
+HOOK="${HOME}/.dotfiles/bin/wtree-hooks/${REPO_NAME}.sh"
+if [ -f "$HOOK" ]; then
+    cmux send --workspace "$WS" "bash '$HOOK'"
+    cmux send-key --workspace "$WS" Enter
+fi
+
+if [ -n "$PROMPT" ]; then
+    SPLIT=$(cmux new-split right --workspace "$WS")
+    cmux send --workspace "$WS" --surface "$SPLIT" "$CLAUDE_CMD '$PROMPT'"
+    cmux send-key --workspace "$WS" --surface "$SPLIT" Enter
+fi
+
+cmux select-workspace --workspace "$WS"

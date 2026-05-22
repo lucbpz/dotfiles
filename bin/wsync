@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Usage: wsync
+#   Renames the current cmux workspace to {repo}/{branch} and sets a
+#   repo-consistent color, matching the convention used by wtree.
+set -euo pipefail
+
+REPO_ROOT=$(git rev-parse --show-toplevel)
+REPO_NAME=$(git remote get-url origin 2>/dev/null | sed 's/.*[/:]//; s/\.git$//' || basename "$REPO_ROOT")
+BRANCH=$(git branch --show-current)
+
+WORKSPACE_NAME=$( [ "$REPO_NAME" = "frontends" ] && echo "$BRANCH" || echo "${REPO_NAME}/${BRANCH}" )
+COLORS=(Red Crimson Orange Amber Olive Green Teal Aqua Blue Navy Indigo Purple Magenta Rose Brown Charcoal)
+IDX=$(( $(printf '%s' "$REPO_NAME" | cksum | awk '{print $1}') % ${#COLORS[@]} ))
+COLOR=${COLORS[$IDX]}
+
+cmux rename-workspace "$WORKSPACE_NAME"
+cmux workspace-action set-color "$COLOR"
